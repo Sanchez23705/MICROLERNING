@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIN: DB_JURÍDICA (Full Screen)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap');
+
+        :root {
+            --bg-base: #020617; --panel-bg: #0f172a; --panel-border: #1e293b;
+            --text-main: #f8fafc; --text-muted: #94a3b8;
+            --accent-blue: #3b82f6; --accent-gold: #fbbf24; --accent-red: #ef4444; --accent-green: #22c55e;
+            --font-ui: 'Rajdhani', sans-serif; --font-mono: 'Share Tech Mono', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: var(--bg-base); display: flex; justify-content: center; align-items: center; width: 100vw; height: 100vh; overflow: hidden; font-family: var(--font-ui); color: var(--text-main); }
+        #app-window { width: 100%; height: 100%; background: radial-gradient(circle at top right, #0a1128 0%, var(--bg-base) 100%); display: flex; flex-direction: column; position: relative; }
+
+        /* HEADER */
+        .system-header { height: 60px; background: #080f1e; border-bottom: 1px solid var(--panel-border); display: flex; justify-content: space-between; align-items: center; padding: 0 30px; }
+        .brand { font-family: var(--font-mono); font-size: 1.3rem; color: var(--accent-gold); display: flex; align-items: center; gap: 12px;}
+        .brand::before { content: ''; display: block; width: 10px; height: 10px; background: var(--accent-blue); box-shadow: 0 0 10px var(--accent-blue); }
+        .system-status { font-family: var(--font-mono); font-size: 1rem; color: var(--accent-green); letter-spacing: 1px; }
+
+        /* WORKSPACE */
+        .workspace { display: flex; flex: 1; height: calc(100% - 60px); }
+
+        /* SIDEBAR */
+        .sidebar { width: 300px; background: rgba(15, 23, 42, 0.6); border-right: 1px solid var(--panel-border); display: flex; flex-direction: column; padding: 30px 0; box-shadow: 5px 0 15px rgba(0,0,0,0.2); z-index: 10; }
+        .nav-group-title { font-family: var(--font-mono); font-size: 0.9rem; color: var(--text-muted); padding: 0 30px; margin-bottom: 20px; letter-spacing: 2px; }
+        .main-nav-btn { background: transparent; border: none; border-left: 4px solid transparent; color: var(--text-muted); font-family: var(--font-ui); font-size: 1.3rem; font-weight: 600; text-align: left; padding: 15px 30px; cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; }
+        .main-nav-btn:hover { background: rgba(59, 130, 246, 0.05); color: #fff; }
+        .main-nav-btn.active { border-left-color: var(--accent-blue); background: rgba(59, 130, 246, 0.1); color: #fff; }
+
+        .btn-validate { margin: auto 30px 20px 30px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.3); padding: 15px; font-family: var(--font-mono); font-size: 1.1rem; cursor: not-allowed; transition: 0.3s; letter-spacing: 1px; border-radius: 4px; text-align: center; }
+        .btn-validate.unlocked { background: rgba(239, 68, 68, 0.1); border-color: var(--accent-red); color: var(--accent-red); cursor: pointer; }
+        .btn-validate.unlocked:hover { background: var(--accent-red); color: #fff; box-shadow: 0 0 20px rgba(239, 68, 68, 0.4); }
+
+        /* CONTENT AREA */
+        .content-area { flex: 1; padding: 50px 80px; display: flex; flex-direction: column; position: relative; overflow-y: auto; }
+        .section-view { display: none; height: 100%; flex-direction: column; animation: fadeIn 0.4s ease; max-width: 1200px; margin: 0 auto; width: 100%; }
+        .section-view.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .section-header h1 { font-size: 3rem; color: #fff; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
+        .badge { display: inline-block; padding: 6px 12px; font-family: var(--font-mono); font-size: 0.9rem; border: 1px solid; border-radius: 4px; margin-bottom: 20px; letter-spacing: 1px; }
+
+        /* PORTADA */
+        .intro-container { text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
+        .intro-title { font-size: 4.5rem; color: var(--accent-gold); text-shadow: 0 0 30px rgba(251, 191, 36, 0.3); margin: 20px 0; letter-spacing: 3px; line-height: 1.1; }
+        .intro-desc { font-size: 1.5rem; color: var(--text-muted); max-width: 800px; line-height: 1.7; margin-bottom: 40px; }
+
+        /* TABS */
+        .sub-tabs-nav { display: flex; gap: 5px; flex-wrap: wrap; border-bottom: 1px solid var(--panel-border); margin-bottom: 35px; }
+        .sub-tab-btn { background: transparent; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); font-family: var(--font-ui); font-size: 1.2rem; font-weight: 600; padding: 12px 20px; cursor: pointer; transition: 0.2s; letter-spacing: 1px; }
+        .sub-tab-btn:hover { color: #fff; }
+        .sub-tab-btn.active { color: var(--accent-blue); border-bottom-color: var(--accent-blue); }
+
+        .sub-tab-content { display: none; flex: 1; font-size: 1.2rem; line-height: 1.6; color: #cbd5e1; }
+        .sub-tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+        .sub-tab-content ul, .sub-tab-content ol { padding-left: 25px; margin-top: 15px; margin-bottom: 15px; }
+        .sub-tab-content li { margin-bottom: 12px; }
+        .highlight-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding: 25px; border-radius: 8px; margin-top: 25px; border-left: 4px solid var(--accent-gold); font-size: 1.15rem; }
+
+        /* AUDIO BUTTON */
+        .audio-trigger { position: absolute; bottom: 50px; right: 80px; display: flex; align-items: center; gap: 12px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); padding: 12px 25px; border-radius: 30px; font-family: var(--font-mono); font-size: 1rem; color: var(--accent-blue); cursor: pointer; transition: 0.2s; }
+        .audio-trigger:hover { background: var(--accent-blue); color: #fff; box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); }
+        .audio-trigger.center-btn { position: relative; bottom: auto; right: auto; margin-top: 20px; }
+
+        /* QUIZ */
+        .quiz-container { background: rgba(0,0,0,0.3); border: 1px solid var(--panel-border); border-radius: 8px; padding: 40px; margin-top: 20px; }
+        .quiz-progress { font-family: var(--font-mono); color: var(--accent-gold); margin-bottom: 20px; font-size: 1.1rem; }
+        .quiz-question { font-size: 1.5rem; color: #fff; margin-bottom: 30px; }
+        .quiz-options { display: flex; flex-direction: column; gap: 12px; }
+        .quiz-btn { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: var(--text-main); font-family: var(--font-ui); font-size: 1.2rem; text-align: left; padding: 15px 25px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .quiz-btn:hover { background: rgba(255,255,255,0.05); border-color: #fff; }
+        .quiz-btn.correct { background: rgba(34, 197, 94, 0.2); border-color: var(--accent-green); color: var(--accent-green); }
+        .quiz-btn.wrong { background: rgba(239, 68, 68, 0.2); border-color: var(--accent-red); color: var(--accent-red); }
+        
+        .pin-reveal-box { display: none; margin-top: 30px; background: rgba(251, 191, 36, 0.1); border: 1px solid var(--accent-gold); padding: 25px; text-align: center; border-radius: 8px; animation: fadeIn 1s; }
+        .pin-code-text { font-family: var(--font-mono); font-size: 3rem; color: var(--accent-gold); letter-spacing: 15px; margin-top: 10px; }
+
+        /* LOCK SCREEN */
+        #lock-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.95); backdrop-filter: blur(15px); z-index: 1000; display: none; flex-direction: column; justify-content: center; align-items: center; }
+        .pin-input { font-family: var(--font-mono); font-size: 3.5rem; letter-spacing: 15px; margin: 30px 0; border-bottom: 3px solid var(--accent-gold); min-width: 150px; text-align: center; }
+        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .keypad button { background: var(--panel-bg); border: 1px solid var(--panel-border); color: #fff; font-family: var(--font-mono); font-size: 1.5rem; padding: 20px 35px; cursor: pointer; border-radius: 8px; transition: 0.2s; }
+        .keypad button:hover { background: var(--accent-blue); }
+
+    </style>
+</head>
+<body>
+
+    <div id="app-window">
+        <header class="system-header">
+            <div class="brand">SIN // DB_JURÍDICA_2026</div>
+            <div class="system-status">ESTADO: EN LÍNEA</div>
+        </header>
+
+        <div class="workspace">
+            <aside class="sidebar">
+                <div class="nav-group-title">EXPEDIENTE 537</div>
+                <button class="main-nav-btn active" onclick="openSection(0)">00. Inicio</button>
+                <button class="main-nav-btn" onclick="openSection(1)">01. Bifurcación</button>
+                <button class="main-nav-btn" onclick="openSection(2)">02. Art. 344-A</button>
+                <button class="main-nav-btn" onclick="openSection(3)">03. Art. 345</button>
+                <button class="main-nav-btn" onclick="openSection(4)">04. Operatividad</button>
+                <button class="main-nav-btn" onclick="openSection(5)" style="color: var(--accent-gold)">05. Evaluación</button>
+                
+                <button class="btn-validate" id="btn-validate" onclick="showLock()">[ REQUIERE PIN ]</button>
+            </aside>
+
+            <main class="content-area">
+
+                <!-- SECCIÓN 0: INICIO -->
+                <div class="section-view active" id="sec-0">
+                    <div class="intro-container">
+                        <span class="badge" style="color:var(--accent-blue); border-color:var(--accent-blue);">SUBDIRECCIÓN DE INVESTIGACIONES // SIN</span>
+                        <h1 class="intro-title">REFORMA PENAL 2026</h1>
+                        <p class="intro-desc">
+                            Módulo interactivo de actualización jurídica sobre el Decreto Legislativo 537. 
+                            Análisis comparativo, estructural y operativo del quiebre procesal definitivo entre el crimen organizado común y la nueva jurisdicción absoluta para estructuras de naturaleza terrorista.
+                        </p>
+                        <button class="audio-trigger center-btn" onclick="speak('Bienvenido al módulo de actualización jurídica, de la Subdirección de Investigaciones. ... Análisis comparativo y operativo, de la Reforma Penal 2026, ... impulsada por el Decreto Legislativo 537.')">▶ Escuchar Presentación</button>
+                    </div>
+                </div>
+                
+                <!-- SECCIÓN 1: BIFURCACIÓN -->
+                <div class="section-view" id="sec-1">
+                    <div class="section-header">
+                        <span class="badge" style="color:var(--accent-gold); border-color:var(--accent-gold)">DECRETO 537</span>
+                        <h1>Contexto de Reforma</h1>
+                    </div>
+                    <div class="sub-tabs-nav">
+                        <button class="sub-tab-btn active" onclick="openSubTab(1, 0)">El Problema Histórico</button>
+                        <button class="sub-tab-btn" onclick="openSubTab(1, 1)">La Solución (DL 537)</button>
+                        <button class="sub-tab-btn" onclick="openSubTab(1, 2)">Silos Jurídicos</button>
+                    </div>
+                    <div class="sub-tab-content active" id="tab-1-0">
+                        <p><strong>El Modelo de Asimilación Legal:</strong></p>
+                        <p>Antes de abril de 2026, el sistema penal salvadoreño operaba bajo un modelo de asimilación. Esto significaba que las pandillas se procesaban bajo el Artículo 345, exactamente igual que cualquier otra agrupación, asociación u organización ilícita de crimen común[cite: 1].</p>
+                        <p>Este enfoque obligaba a los juzgadores a tratar a las estructuras terroristas con las mismas escalas penales y beneficios procesales diseñados para bandas delictivas de menor impacto social[cite: 1].</p>
+                    </div>
+                    <div class="sub-tab-content" id="tab-1-1">
+                        <p><strong>La Intervención del Legislador:</strong></p>
+                        <p>El Decreto Legislativo 537, con entrada en vigor el 26 de marzo de 2026, marca un quiebre definitivo y erradica por completo este modelo de asimilación legal[cite: 1].</p>
+                        <p>A partir de esta reforma, las organizaciones conocidas como pandillas son extraídas formalmente del alcance del Art. 345 y quedan sujetas a una nueva arquitectura penal[cite: 1].</p>
+                    </div>
+                    <div class="sub-tab-content" id="tab-1-2">
+                        <p>Se crean dos vías procesales totalmente excluyentes:</p>
+                        <div class="highlight-box">
+                            <ul>
+                                <li><strong>El Silo del Terrorismo (Nuevo Art. 344-A):</strong> Crea un régimen permanente, aislado y de tolerancia cero, diseñado de forma exclusiva para organizaciones terroristas y pandillas. Elimina las escalas penales tradicionales en favor de condenas absolutas[cite: 1].</li>
+                                <li><strong>El Regreso al Origen (Art. 345 Reformado):</strong> Este artículo regresa a su naturaleza jurídica original. Mantiene el castigo graduado y proporcional, pero aplicable únicamente para el crimen común organizado[cite: 1].</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <button class="audio-trigger" onclick="speak('El Decreto 537, erradica la asimilación legal. ... A partir de su entrada en vigor, ... las pandillas salen del artículo 345, ... y quedan exclusivamente bajo el artículo 344 A, ... separándolas definitivamente del crimen organizado común.')">▶ Reproducir Audio</button>
+                </div>
+
+                <!-- SECCIÓN 2: ART 344-A -->
+                <div class="section-view" id="sec-2">
+                    <div class="section-header">
+                        <span class="badge" style="color:var(--accent-red); border-color:var(--accent-red)">TERRORISMO / PANDILLAS</span>
+                        <h1>Artículo 344-A</h1>
+                    </div>
+                    <div class="sub-tabs-nav">
+                        <button class="sub-tab-btn active" onclick="openSubTab(2, 0)">Naturaleza y Pena</button>
+                        <button class="sub-tab-btn" onclick="openSubTab(2, 1)">Supuestos Agravados</button>
+                        <button class="sub-tab-btn" onclick="openSubTab(2, 2)">Régimen Juvenil</button>
+                        <button class="sub-tab-btn" onclick="openSubTab(2, 3)">Mecanismo de Revisión</button>
+                    </div>
+                    <div class="sub-tab-content active" id="tab-2-0">
+                        <p><strong>Naturaleza Jurídica:</strong> Es una norma específica y absoluta, de aplicación exclusiva para organizaciones terroristas conocidas como pandillas[cite: 1].</p>
+                        <ul>
+                            <li><strong>Conducta Típica (Verbo Rector):</strong> Pertenecer. A diferencia del crimen común, bajo esta norma no se requiere acreditar la comisión de un acto ilícito adicional; la mera pertenencia probada es el delito sancionado[cite: 1].</li>
+                            <li><strong>Estructura de la Pena:</strong> Prisión perpetua. Es de aplicación automática, lo que significa que la discrecionalidad judicial para graduar la condena es nula[cite: 1].</li>
+                        </ul>
+                    </div>
+                    <div class="sub-tab-content" id="tab-2-1">
+                        <p>Aunque la pena base es la prisión perpetua, la ley establece de manera explícita una ampliación del reproche penal para 5 supuestos agravados[cite: 1]:</p>
+                        <div class="highlight-box" style="font-size: 1.1rem; padding: 15px;">
+                            <ol>
+                                <li><strong>La Cúpula:</strong> Cuando los sujetos tengan calidad de creadores, organizadores, jefes, dirigentes, financistas o cabecillas[cite: 1].</li>
+                                <li><strong>Corrupción:</strong> Si el autor fuere autoridad pública, agente de autoridad, funcionario o empleado público[cite: 1].</li>
+                                <li><strong>Facilitadores:</strong> Quienes promuevan, ayuden, faciliten o favorezcan la conformación, o reciban provecho directo o indirecto a sabiendas de su ilegalidad[cite: 1].</li>
+                                <li><strong>Negociadores de Impunidad:</strong> El que solicite, demande, ofrezca, negocie o pacte acuerdos de no persecución criminal o prerrogativas para dispensar ilegalmente la ley[cite: 1].</li>
+                                <li><strong>Intermediarios:</strong> Los que promuevan o participen en las negociaciones de impunidad en calidad de mediadores o interlocutores[cite: 1].</li>
+                            </ol>
+                        </div>
+                    </div>
+                    <div class="sub-tab-content" id="tab-2-2">
+                        <p><strong>El Quiebre del Régimen Especial Juvenil:</strong></p>
+                        <p>La reforma establece un cambio radical respecto a la Ley Penal Juvenil tradicional. Para las conductas tipificadas en el Art. 344-A, la pena perpetua automática tiene aplicación directa y plena a partir de los <strong>12 años de edad</strong>[cite: 1].</p>
+                        <p>El mecanismo de revisión es extremadamente severo: la primera revisión judicial para estos casos ocurre únicamente tras haber cumplido 25 años continuos de encarcelamiento.</p>
+                    </div>
+                    <div class="sub-tab-content" id="tab-2-3">
+                        <p><strong>Línea de Tiempo del Régimen de Revisión de Penas[cite: 1]:</strong></p>
+                        <p>Al no existir escala de graduación previa, la revisión judicial posterior a la condena inicial es el único mecanismo de evaluación[cite: 1].</p>
+                        <ul>
+                            <li><strong>Año 0:</strong> Imposición automática de la Prisión Perpetua[cite: 1].</li>
+                            <li><strong>Año 25:</strong> Primera revisión (Exclusivamente si el condenado era menor de edad al momento del ilícito)[cite: 1].</li>
+                            <li><strong>Año 30:</strong> Revisión obligatoria para adultos condenados por un solo delito[cite: 1].</li>
+                            <li><strong>Año 35:</strong> Revisión obligatoria en casos donde exista concurso de varios delitos[cite: 1].</li>
+                            <li><strong>Año 40:</strong> Revisión obligatoria si concurren las agravantes estipuladas (cúpula, funcionarios, negociadores)[cite: 1].</li>
+                        </ul>
+                    </div>
+                    <button class="audio-trigger" onclick="speak('Articulo 344 A. ... Norma absoluta para pandillas. ... Pertenecer, se castiga con prisión perpetua automática. ... La ley detalla agravantes para la cúpula, ... autoridades corruptas, ... y pactos de no persecución criminal. ... Para un adulto sin agravantes adicionales, ... la primera revisión ocurre hasta el año 30 de su condena.')">▶ Reproducir Audio</button>
+                </div>
+
+                <!-- SECCIÓN 3: ART 345 -->
+                <div class="section-view" id="sec-3">
+                    <div class="section-header">
+                        <span class="badge" style="color:var(--accent-blue); border-color:var(--accent-blue)">CRIMEN ORGANIZADO</span>
+                        <h1>Artículo 345 Reformado</h1>
+                    </div>
+                    <div class="sub-tabs-nav">
+                        <button class="sub-tab-btn active" onclick="openSubTab(3, 0)">Naturaleza y Conducta</button>
+                        <button class="sub-tab-btn" onclick="openSubTab(3, 1)">Estructuración Exigida</button>
+                        <button class="sub-tab-btn" onclick="openSubTab(3, 2)">Agravantes y Concursos</button>
+                    </div>
+                    <div class="sub-tab-content active" id="tab-3-0">
+                        <p><strong>Naturaleza Jurídica:</strong> El Artículo 345 es ahora una norma general y graduada, destinada exclusivamente a las agrupaciones, asociaciones y organizaciones de crimen organizado que no entran en la categoría de pandillas[cite: 1].</p>
+                        <ul>
+                            <li><strong>Conducta Típica (Verbo Rector):</strong> "Tomar parte" en la agrupación. A diferencia de la mera pertenencia, esta figura requiere comprobar una participación activa del imputado en las actividades delictivas[cite: 1].</li>
+                            <li><strong>Estructura de la Pena:</strong> Se sancionará con prisión escalonada de <strong>diez a veinte años</strong>[cite: 1].</li>
+                            <li><strong>Discrecionalidad:</strong> Totalmente permitida. El juez tiene la facultad de distinguir los grados de participación y asignar la pena proporcionalmente dentro del rango[cite: 1].</li>
+                        </ul>
+                    </div>
+                    <div class="sub-tab-content" id="tab-3-1">
+                        <p>Para que la Policía Nacional Civil y la Fiscalía puedan procesar a una estructura criminal bajo el marco del Art. 345, es indispensable acreditar que la agrupación cumple con al menos estas características estructurales[cite: 1]:</p>
+                        <div class="highlight-box">
+                            <ul>
+                                <li><strong>Asociación Múltiple:</strong> Que estén conformadas por tres o más personas[cite: 1].</li>
+                                <li><strong>Temporalidad:</strong> Que posean un carácter temporal o permanente[cite: 1].</li>
+                                <li><strong>Legalidad:</strong> Pueden ser agrupaciones constituidas de hecho o de derecho[cite: 1].</li>
+                                <li><strong>Organización:</strong> Que posean algún grado de estructuración interna, por mínima que sea[cite: 1].</li>
+                                <li><strong>Propósito:</strong> Que tengan la finalidad explícita de delinquir[cite: 1].</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="sub-tab-content" id="tab-3-2">
+                        <p><strong>El Supuesto Agravado de Corrupción:</strong></p>
+                        <p>A diferencia de las múltiples agravantes del 344-A, el Art. 345 contempla un solo supuesto agravado fundamental: Si el autor o partícipe fuere autoridad pública, agente de autoridad, funcionario o empleado público[cite: 1].</p>
+                        <p>En este escenario, el efecto procesal es contundente:</p>
+                        <ul>
+                            <li>La pena se agravará hasta una tercera parte del máximo aplicable en cada caso[cite: 1].</li>
+                            <li>Se añadirá la inhabilitación absoluta del cargo por el doble del tiempo de la condena impuesta[cite: 1].</li>
+                        </ul>
+                        <div class="highlight-box" style="padding: 15px; margin-top: 10px;">
+                            <strong>Concurso de Delitos:</strong> El legislador fue claro al establecer que el presente tipo penal de agrupaciones ilícitas se castigará en concurso con otros delitos materiales cometidos por la estructura[cite: 1].
+                        </div>
+                    </div>
+                    <button class="audio-trigger" onclick="speak('Artículo 345. ... Retorna como norma general para el crimen común. ... Requiere demostrar la participación activa, ... en estructuras de 3 o más personas con finalidad de delinquir. ... La sanción es de 10 a 20 años, ... agravándose un tercio del máximo, ... para funcionarios públicos involucrados.')">▶ Reproducir Audio</button>
+                </div>
+
+                <!-- SECCIÓN 4: OPERATIVIDAD -->
+                <div class="section-view" id="sec-4">
+                    <div class="section-header">
+                        <span class="badge" style="color:var(--text-muted); border-color:var(--text-muted)">DIRECTRIZ PNC // SIN</span>
+                        <h1>Consecuencia Operativa</h1>
+                    </div>
+                    <div class="sub-tabs-nav">
+                        <button class="sub-tab-btn active" onclick="openSubTab(4, 0)">El Nuevo Paradigma</button>
+                        <button class="sub-tab-btn" onclick="openSubTab(4, 1)">Arquitectura de Investigación</button>
+                        <button class="sub-tab-btn" onclick="openSubTab(4, 2)">Divergencia de Tribunales</button>
+                        <button class="sub-tab-btn" onclick="openSubTab(4, 3)">Plazos Fiscales</button>
+                    </div>
+                    <div class="sub-tab-content active" id="tab-4-0">
+                        <p>El cambio de ley exige una transformación inmediata en la metodología de la Subdirección de Investigaciones (SIN).</p>
+                        <p><strong>La Regla de Oro Probatoria:</strong> Ya no es suficiente con procesar un delito individual (como probar un homicidio, una extorsión o tráfico en la escena primaria)[cite: 1]. Para aplicar exitosamente el marco de terrorismo del Art. 344-A, la investigación policial no puede detenerse allí.</p>
+                        <div class="highlight-box" style="border-color: var(--accent-red);">
+                            El investigador debe documentar exhaustivamente la <strong>Macro-estructura</strong> de la organización. Esto implica aportar pruebas de su existencia funcional, su continuidad temporal, el control territorial que ejercen y la relación inequívoca del imputado con el grupo.
+                        </div>
+                    </div>
+                    <div class="sub-tab-content" id="tab-4-1">
+                        <p>Para asegurar una condena de prisión perpetua bajo el Art. 344-A, la arquitectura del expediente policial debe sostenerse invariablemente sobre tres pilares probatorios fundamentales:</p>
+                        <ol>
+                            <li><strong>La Existencia de la Organización Terrorista:</strong> Evidenciar orgánicamente que la estructura (la <strong>clica</strong> o programa) existe, mantiene continuidad temporal y desarrolla actividades criminales propias del terrorismo[cite: 1].</li>
+                            <li><strong>Vinculación Consciente del Investigado:</strong> Demostrar con peritajes y trabajo de campo que el sujeto pertenece, colabora conscientemente, provee finanzas o cumple un rol de apoyo logístico a la estructura[cite: 1].</li>
+                            <li><strong>El Rol Específico y Operatividad:</strong> Identificar el grado de participación (cabecilla, financista, colaborador, negociador, facilitador o miembro operativo) y delimitar geográficamente la zona o <strong>cancha</strong> donde ejercen control o accionar criminal[cite: 1].</li>
+                        </ol>
+                    </div>
+                    <div class="sub-tab-content" id="tab-4-2">
+                        <p>La bifurcación penal también genera caminos procesales distintos desde el momento de la captura:</p>
+                        <ul>
+                            <li><strong>Casos bajo el Art. 344-A (Terrorismo):</strong> Son derivados a los Tribunales de lo Criminal o Especializados Contra el Crimen Organizado[cite: 1]. En esta jurisdicción, se decreta <strong>detención provisional obligatoria</strong> en todos los casos; es improcedente la solicitud de medidas cautelares sustitutivas[cite: 1].</li>
+                            <li><strong>Casos bajo el Art. 345 (Crimen Común):</strong> Dependiendo de la complejidad, pueden tramitarse en un Tribunal común para casos de menor envergadura, o en un Tribunal Especializado[cite: 1]. Aquí, la ley procesal sí permite la evaluación y otorgamiento de medidas sustitutivas a la detención, evaluadas a discreción del juez según la gravedad del hecho[cite: 1].</li>
+                        </ul>
+                    </div>
+                    <div class="sub-tab-content" id="tab-4-3">
+                        <p>Debido a la inmensa complejidad de documentar la macro-estructura terrorista, la ley otorga herramientas procesales excepcionales para la investigación del <strong>Art. 344-A</strong>:</p>
+                        <div class="highlight-box">
+                            <ul>
+                                <li><strong>Plazo Extendido:</strong> Se establece un plazo inicial de <strong>24 meses de investigación</strong>, el cual es prorrogable por un período similar si el caso lo amerita[cite: 1].</li>
+                                <li><strong>Juicio en Ausencia:</strong> El proceso penal no se detiene ante la evasión. Puede continuar todas sus fases procesales y llegar a una condena formal aun si el imputado se encuentra prófugo y no está presente en la sala[cite: 1].</li>
+                            </ul>
+                        </div>
+                        <p style="font-size:1.1rem; margin-top: 15px; color: var(--text-muted);"><em>Nota Operativa: Para los casos del Art. 345, el plazo de 24 meses aplica únicamente cuando el expediente es tramitado bajo la Ley Especial contra el Crimen Organizado. Si por su menor gravedad el caso es derivado a un tribunal común, se regirá estrictamente por los plazos ordinarios de instrucción[cite: 1].</em></p>
+                    </div>
+                    <button class="audio-trigger" onclick="speak('Nueva directriz operativa para la SIN. ... El expediente debe probar irrefutablemente la macro-estructura criminal. ... Es indispensable documentar la existencia orgánica de las clicas, ... su permanencia temporal, ... y la delimitación de sus canchas territoriales. ... Recuerde, ... el artículo 344 A cuenta con un plazo de investigación inicial de 24 meses, ... y permite juicios en ausencia.')">▶ Reproducir Audio</button>
+                </div>
+
+                <!-- SECCIÓN 5: EVALUACIÓN -->
+                <div class="section-view" id="sec-5">
+                    <div class="section-header">
+                        <span class="badge" style="color:var(--accent-green); border-color:var(--accent-green)">VALIDACIÓN DE EXPEDIENTE</span>
+                        <h1>Evaluación Táctica</h1>
+                    </div>
+                    <p style="font-size: 1.2rem; color: var(--text-muted); max-width: 900px;">Para confirmar su dominio de la Reforma Penal 2026, responda correctamente el siguiente cuestionario. Al aprobar las 6 preguntas, el sistema emitirá la clave PIN para registrar su actividad.</p>
+                    
+                    <div class="quiz-container" id="quiz-box">
+                        <div class="quiz-progress" id="quiz-progress">Pregunta 1 de 6</div>
+                        
+                        <!-- PREGUNTA 1 -->
+                        <div id="q1">
+                            <div class="quiz-question">1. Según el nuevo Artículo 344-A (exclusivo para pandillas), ¿cuál es la sanción impuesta únicamente por comprobar la conducta de "pertenecer"?</div>
+                            <div class="quiz-options">
+                                <button class="quiz-btn" onclick="evaluar(this, 1, false)">A) Prisión escalonada de 10 a 20 años, según la decisión del juez.</button>
+                                <button class="quiz-btn" onclick="evaluar(this, 1, true)">B) Prisión perpetua impuesta de forma automática, con nula discrecionalidad judicial.</button>
+                                <button class="quiz-btn" onclick="evaluar(this, 1, false)">C) Prisión de 20 a 30 años, con revisión a los 10 años.</button>
+                            </div>
+                        </div>
+                        
+                        <!-- PREGUNTA 2 -->
+                        <div id="q2" style="display:none;">
+                            <div class="quiz-question">2. Dentro del marco de las agrupaciones de crimen organizado común (Artículo 345), ¿qué ocurre si el autor del delito es un funcionario público?</div>
+                            <div class="quiz-options">
+                                <button class="quiz-btn" onclick="evaluar(this, 2, false)">A) Es trasladado automáticamente para ser juzgado bajo el Artículo 344-A.</button>
+                                <button class="quiz-btn" onclick="evaluar(this, 2, false)">B) La pena se duplica y se imponen multas financieras.</button>
+                                <button class="quiz-btn" onclick="evaluar(this, 2, true)">C) La pena se agrava hasta 1/3 del máximo y se impone inhabilitación absoluta del cargo por el doble del tiempo.</button>
+                            </div>
+                        </div>
+
+                        <!-- PREGUNTA 3 -->
+                        <div id="q3" style="display:none;">
+                            <div class="quiz-question">3. ¿Qué exige el nuevo paradigma investigativo a la Subdirección de Investigaciones para aplicar con éxito el régimen del terrorismo?</div>
+                            <div class="quiz-options">
+                                <button class="quiz-btn" onclick="evaluar(this, 3, false)">A) Comprobar únicamente el delito primario, como la flagrancia en una extorsión en la escena del crimen.</button>
+                                <button class="quiz-btn" onclick="evaluar(this, 3, true)">B) Probar la macro-estructura probando la existencia funcional de las clicas, la vinculación y el control operativo en las canchas.</button>
+                            </div>
+                        </div>
+
+                        <!-- PREGUNTA 4 -->
+                        <div id="q4" style="display:none;">
+                            <div class="quiz-question">4. Bajo el quebre procesal del Régimen Juvenil que establece la reforma del Artículo 344-A, ¿a partir de qué edad se impone la pena perpetua a menores?</div>
+                            <div class="quiz-options">
+                                <button class="quiz-btn" onclick="evaluar(this, 4, false)">A) 16 años, con revisión a los 10 años.</button>
+                                <button class="quiz-btn" onclick="evaluar(this, 4, true)">B) 12 años, con primera revisión judicial a los 25 años de encarcelamiento continuo.</button>
+                                <button class="quiz-btn" onclick="evaluar(this, 4, false)">C) 14 años, siendo juzgado siempre por Tribunales Especializados de Menores.</button>
+                            </div>
+                        </div>
+
+                        <!-- PREGUNTA 5 -->
+                        <div id="q5" style="display:none;">
+                            <div class="quiz-question">5. En relación a la divergencia de medidas cautelares, ¿qué sucede con los procesados bajo el marco exclusivo de pandillas (Art. 344-A)?</div>
+                            <div class="quiz-options">
+                                <button class="quiz-btn" onclick="evaluar(this, 5, false)">A) Proceden medidas sustitutivas únicamente si se trata de casos de menor gravedad avalados por el juez.</button>
+                                <button class="quiz-btn" onclick="evaluar(this, 5, true)">B) Aplica detención provisional obligatoria en todos los casos de forma improcedente a sustitutivas.</button>
+                            </div>
+                        </div>
+
+                        <!-- PREGUNTA 6 -->
+                        <div id="q6" style="display:none;">
+                            <div class="quiz-question">6. Conforme a la línea de tiempo del mecanismo de revisión de penas del Art. 344-A, ¿en qué momento ocurre la primera revisión obligatoria para un adulto condenado por un solo delito?</div>
+                            <div class="quiz-options">
+                                <button class="quiz-btn" onclick="evaluar(this, 6, false)">A) En el Año 25.</button>
+                                <button class="quiz-btn" onclick="evaluar(this, 6, true)">B) En el Año 30.</button>
+                                <button class="quiz-btn" onclick="evaluar(this, 6, false)">C) En el Año 40.</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pin-reveal-box" id="pin-reveal">
+                        <h3>EVALUACIÓN TÁCTICA APROBADA // ACCESO AL SISTEMA GARANTIZADO</h3>
+                        <p>Utilice la siguiente secuencia de seguridad en la terminal lateral para validar su participación y cerrar el expediente de la DB_JURÍDICA:</p>
+                        <div class="pin-code-text">5 3 7</div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- PANTALLA DE BLOQUEO -->
+    <div id="lock-screen">
+        <h2 style="color: var(--accent-gold); font-family: var(--font-mono); font-size: 2rem;">TERMINAL DE VALIDACIÓN SITEC</h2>
+        <p style="color: var(--text-muted); font-size: 1.2rem; margin-top: 15px;">Ingrese el código PIN de autorización asignado en su evaluación.</p>
+        <div class="pin-input" id="pin-display">_ _ _</div>
+        <div class="keypad">
+            <button onclick="pressPin(1)">1</button><button onclick="pressPin(2)">2</button><button onclick="pressPin(3)">3</button>
+            <button onclick="pressPin(4)">4</button><button onclick="pressPin(5)">5</button><button onclick="pressPin(6)">6</button>
+            <button onclick="pressPin(7)">7</button><button onclick="pressPin(8)">8</button><button onclick="pressPin(9)">9</button>
+            <button style="grid-column: span 3;" onclick="pressPin(0)">0</button>
+        </div>
+    </div>
+
+    <script>
+        const mainNavBtns = document.querySelectorAll('.main-nav-btn');
+        const sections = document.querySelectorAll('.section-view');
+
+        // CARGAR VOCES
+        window.speechSynthesis.onvoiceschanged = function() { window.speechSynthesis.getVoices(); };
+
+        function openSection(index) {
+            window.speechSynthesis.cancel(); 
+            mainNavBtns.forEach(btn => btn.classList.remove('active'));
+            mainNavBtns[index].classList.add('active');
+
+            sections.forEach(sec => sec.classList.remove('active'));
+            sections[index].classList.add('active');
+
+            // Abrir la sub-pestaña 0 solo si la sección tiene sub-pestañas (Evita errores en Inicio o Evaluación)
+            const hasSubTabs = sections[index].querySelectorAll('.sub-tab-btn').length > 0;
+            if(hasSubTabs) {
+                openSubTab(index, 0);
+            }
+        }
+
+        function openSubTab(sectionIndex, tabIndex) {
+            const section = sections[sectionIndex];
+            const subBtns = section.querySelectorAll('.sub-tab-btn');
+            const subContents = section.querySelectorAll('.sub-tab-content');
+
+            if(subBtns.length === 0) return;
+
+            subBtns.forEach(btn => btn.classList.remove('active'));
+            subContents.forEach(content => content.classList.remove('active'));
+
+            subBtns[tabIndex].classList.add('active');
+            subContents[tabIndex].classList.add('active');
+        }
+
+        function speak(texto) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(texto);
+            
+            utterance.lang = 'es-MX';
+            const voces = window.speechSynthesis.getVoices();
+            const vozLatina = voces.find(voz => voz.lang === 'es-MX' || voz.lang === 'es-US' || (voz.lang.startsWith('es-') && voz.lang !== 'es-ES'));
+            
+            if(vozLatina) { utterance.voice = vozLatina; }
+            
+            utterance.rate = 0.95;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // LÓGICA DE LAS 6 PREGUNTAS (Estricta y Directa)
+        function evaluar(btn, questionNum, isCorrect) {
+            const options = btn.parentElement.querySelectorAll('.quiz-btn');
+            options.forEach(opt => { opt.disabled = true; opt.style.opacity = '0.5'; });
+            btn.style.opacity = '1';
+
+            if(isCorrect) {
+                btn.classList.add('correct');
+                setTimeout(() => nextQuestion(questionNum), 800);
+            } else {
+                btn.classList.add('wrong');
+                setTimeout(() => {
+                    options.forEach(opt => { opt.disabled = false; opt.style.opacity = '1'; opt.classList.remove('wrong'); });
+                }, 1500);
+            }
+        }
+
+        function nextQuestion(currentNum) {
+            document.getElementById('q' + currentNum).style.display = 'none';
+            if(currentNum < 6) {
+                document.getElementById('q' + (currentNum + 1)).style.display = 'block';
+                document.getElementById('quiz-progress').innerText = `Pregunta ${currentNum + 1} de 6`;
+            } else {
+                document.getElementById('quiz-box').style.display = 'none';
+                document.getElementById('pin-reveal').style.display = 'block';
+                const btnVal = document.getElementById('btn-validate');
+                btnVal.classList.add('unlocked');
+                btnVal.innerText = "[ CERRAR EXPEDIENTE ]";
+            }
+        }
+
+        // CANDADO DE SEGURIDAD (Validación)
+        let currentPin = "";
+        const lockScreen = document.getElementById('lock-screen');
+        const pinDisplay = document.getElementById('pin-display');
+        const btnValidate = document.getElementById('btn-validate');
+
+        function showLock() {
+            if(!btnValidate.classList.contains('unlocked')) return;
+            lockScreen.style.display = 'flex';
+            currentPin = ""; pinDisplay.innerText = "_ _ _"; pinDisplay.style.color = "var(--text-main)";
+        }
+
+        function pressPin(num) {
+            if(currentPin.length >= 3) return;
+            currentPin += num;
+            pinDisplay.innerText = currentPin.padEnd(3, '_').split('').join(' ');
+            
+            if(currentPin.length === 3) {
+                if(currentPin === "537") {
+                    pinDisplay.style.color = "var(--accent-green)"; 
+                    pinDisplay.innerText = "A P R O B A D O";
+                    setTimeout(() => {
+                        lockScreen.style.display = 'none';
+                        btnValidate.innerText = "[ EXPEDIENTE CERRADO ]";
+                        btnValidate.style.background = "rgba(34, 197, 94, 0.15)";
+                        btnValidate.style.borderColor = "var(--accent-green)";
+                        btnValidate.style.color = "var(--accent-green)";
+                        btnValidate.onclick = null; 
+                        if (window.parent) window.parent.postMessage('modulo_completado', '*');
+                    }, 1000);
+                } else {
+                    pinDisplay.style.color = "var(--accent-red)"; 
+                    setTimeout(() => { currentPin = ""; pinDisplay.innerText = "_ _ _"; pinDisplay.style.color = "var(--text-main)"; }, 600);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
